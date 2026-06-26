@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seller ROI Calculator — Revenue Execution</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#FAF8F5;color:#1C1C1A;font-size:13px}
+.hdr{background:#1C1C1A;padding:1rem 1.25rem}
+.hdr-logo{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#B89C82;margin-bottom:.35rem}
+.hdr h1{font-size:16px;font-weight:500;color:#fff;line-height:1.3;margin-bottom:.2rem}
+.hdr p{font-size:11px;color:rgba(255,255,255,.45);line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:1rem}
+
+/* Step headers */
+.step-hdr{margin-bottom:.75rem}
+.step-num{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#B89C82;margin-bottom:3px}
+.step-title{font-size:14px;font-weight:500;color:#1C1C1A}
+.step-sub{font-size:11px;color:#827F7C;margin-top:2px}
+
+/* Panel */
+.panel{background:#fff;border-radius:8px;padding:.875rem 1rem;margin-bottom:.875rem;border:1px solid #E8E5DF}
+
+/* Sliders */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:.625rem 1.25rem}
+@media(max-width:540px){.sg{grid-template-columns:1fr}}
+.sr{margin-bottom:0}
+.st{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.sn{font-size:11px;color:#444;display:flex;align-items:center;gap:3px}
+.sv{font-size:13px;font-weight:500;color:#1C1C1A;min-width:80px;text-align:right}
+input[type=range]{width:100%;height:3px;border-radius:2px;appearance:none;background:#E8E5DF;outline:none;cursor:pointer;margin-bottom:2px}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#1C1C1A;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#1C1C1A;border:none}
+.tip{width:13px;height:13px;border-radius:50%;border:1px solid #ccc;display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#999;cursor:help;flex-shrink:0;position:relative}
+.tip:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1C1C1A;color:#fff;font-size:10px;padding:5px 8px;border-radius:6px;white-space:normal;max-width:220px;z-index:20;line-height:1.5;pointer-events:none;width:200px}
+.zl{font-size:10px;font-weight:600;margin-top:2px}
+.zr{display:flex;justify-content:space-between;font-size:9px;color:#B89C82;margin-top:1px}
+.zc{color:#1A7A48}.zs{color:#D4860A}.za{color:#C0392B}
+
+/* Position metrics */
+.pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:.75rem}
+.pm{background:#FAF8F5;border-radius:6px;padding:.5rem .625rem;border:1px solid #E8E5DF}
+.pm .pl{font-size:9px;color:#B89C82;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.pm .pv{font-size:15px;font-weight:500;color:#1C1C1A}
+.pm .ps{font-size:9px;color:#B89C82;margin-top:1px}
+.pm.red .pv{color:#C0392B}
+.pm.amber .pv{color:#D4860A}
+.pm.green .pv{color:#1A7A48}
+
+/* Deal worth */
+
+
+/* Pipeline visual */
+.pipe-visual{margin:.75rem 0}
+.pipe-bar-wrap{background:#E8E5DF;border-radius:4px;height:12px;margin-bottom:4px;position:relative;overflow:hidden}
+.pipe-bar-closed{position:absolute;height:100%;background:#1A7A48;border-radius:4px 0 0 4px;transition:width .3s}
+.pipe-bar-pipe{position:absolute;height:100%;background:#185FA5;transition:width .3s left .3s}
+.pipe-bar-labels{display:flex;justify-content:space-between;font-size:9px;color:#827F7C}
+
+/* Session diagnosis cards */
+.diag-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:.875rem}
+.diag-card{padding:.875rem;border:1.5px solid #E8E5DF;border-radius:8px;background:#fff;cursor:pointer;transition:all .15s;position:relative}
+.diag-card:hover{border-color:#1C1C1A;transform:translateY(-1px)}
+.diag-card.on{border-color:#1C1C1A;background:#1C1C1A}
+.diag-card .dc-q{font-size:11px;color:#827F7C;line-height:1.4;margin-bottom:.5rem}
+.diag-card .dc-s{font-size:12px;font-weight:600;color:#1C1C1A;margin-bottom:2px}
+.diag-card .dc-o{font-size:10px;color:#B89C82;line-height:1.3;margin-bottom:.5rem}
+.diag-card .dc-p{font-size:10px;color:#B89C82}
+.diag-card.on .dc-q{color:rgba(255,255,255,.6)}
+.diag-card.on .dc-s{color:#fff}
+.diag-card.on .dc-o{color:rgba(255,255,255,.5)}
+.diag-card.on .dc-p{color:#B89C82}
+.diag-card .dc-tag{position:absolute;top:.5rem;right:.5rem;width:18px;height:18px;border-radius:50%;background:#1A7A48;color:#fff;font-size:10px;display:none;align-items:center;justify-content:center}
+.diag-card.on .dc-tag{display:flex}
+
+/* Session specific inputs */
+.sess-in{background:#F9F8F4;border-radius:6px;padding:.75rem .875rem;margin-bottom:.875rem;border:1px solid #E8E5DF}
+.sess-in-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#B89C82;margin-bottom:.625rem}
+
+/* Result panel */
+.result{background:#1C1C1A;border-radius:8px;padding:1rem 1.25rem;margin-bottom:.875rem}
+.res-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+.res-name{font-size:13px;font-weight:500;color:#fff}
+.res-ey{font-size:9px;color:#B89C82;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.res-price{font-size:11px;color:rgba(255,255,255,.35)}
+
+/* Result story for ODA */
+.res-story{background:rgba(255,255,255,.06);border-radius:6px;padding:.625rem .875rem;margin-bottom:.75rem;font-size:11px;color:rgba(255,255,255,.7);line-height:1.7}
+.res-story strong{color:#fff}
+.res-story .highlight{color:#6FCF97;font-weight:600}
+
+.res-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:.75rem}
+.rm{background:rgba(255,255,255,.07);border-radius:6px;padding:.625rem .75rem}
+.rm .rl{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+.rm-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:2px}
+.rm-before{font-size:12px;font-weight:500;color:rgba(255,255,255,.35);text-decoration:line-through}
+.rm-after{font-size:18px;font-weight:500;color:#6FCF97}
+.rm-delta{font-size:10px;color:#6FCF97;font-weight:600}
+.rm .rs{font-size:9px;color:rgba(255,255,255,.3);margin-top:1px}
+
+.res-roi{font-size:11px;color:rgba(255,255,255,.6);line-height:1.6;background:rgba(255,255,255,.05);border-radius:6px;padding:.625rem .875rem}
+.res-roi strong{color:#6FCF97}
+
+/* Toggle */
+.tog-row{display:flex;align-items:center;gap:8px;margin-bottom:.875rem;cursor:pointer}
+.tog{width:32px;height:18px;background:#E8E5DF;border-radius:9px;position:relative;transition:background .2s;flex-shrink:0}
+.tog.on{background:#1C1C1A}
+.tok{width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.tog.on .tok{left:16px}
+.tog-lbl{font-size:12px;color:#827F7C}
+.tog-lbl strong{color:#1C1C1A}
+
+/* Comparison */
+.comp-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#B89C82;margin-bottom:.625rem}
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:.75rem}
+.cc{border-radius:8px;padding:.875rem;border:1.5px solid #E8E5DF;background:#fff;transition:all .2s}
+.cc.grey{opacity:.35;filter:grayscale(.2)}
+.cc.act{border-color:#1C1C1A}
+.cc .ct{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+.cc .cr{font-size:16px;font-weight:500;margin-bottom:1px}
+.cc .co{font-size:10px;font-weight:500;margin-bottom:3px}
+.cc .cp{font-size:10px;color:#1A7A48;font-weight:600;margin-bottom:4px}
+.cc .cn{font-size:10px;color:#827F7C;line-height:1.4;margin-bottom:6px}
+.cc .ca{font-size:10px;font-weight:500;color:#1C1C1A;padding-top:6px;border-top:1px solid #E8E5DF;cursor:pointer}
+.bda-c{border-top:3px solid #185FA5}.bda-c .ct,.bda-c .cr,.bda-c .co{color:#185FA5}
+.oda-c{border-top:3px solid #0F6E56}.oda-c .ct,.oda-c .cr,.oda-c .co{color:#0F6E56}
+.dpa-c{border-top:3px solid #854F0B}.dpa-c .ct,.dpa-c .cr,.dpa-c .co{color:#854F0B}
+
+/* Cumulative */
+.cum{background:#fff;border:1px solid #E8E5DF;border-radius:8px;padding:.875rem 1rem;margin-bottom:.75rem}
+.cum-title{font-size:11px;font-weight:500;color:#1C1C1A;margin-bottom:.625rem}
+.cum-track{background:#E8E5DF;border-radius:3px;height:10px;margin-bottom:.375rem;position:relative;overflow:visible}
+.cum-seg{position:absolute;height:100%;top:0;transition:all .3s;border-radius:0}
+.cum-seg:first-child{border-radius:3px 0 0 3px}
+.cum-seg:last-child{border-radius:0 3px 3px 0}
+.cum-labels{display:flex;justify-content:space-between;font-size:9px;color:#B89C82;margin-bottom:.5rem}
+.cum-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.cst{text-align:center}
+.cst .cp{font-size:13px;font-weight:600;margin-bottom:1px}
+.cst .cl{font-size:9px;color:#827F7C}
+
+/* Bundle */
+.bundle{background:#1C1C1A;border-radius:8px;padding:1rem 1.25rem;margin-bottom:.875rem;display:none}
+.bundle h3{font-size:13px;font-weight:500;color:#fff;margin-bottom:3px}
+.bundle p{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:.75rem;line-height:1.5}
+.bun-row{display:flex;align-items:center;justify-content:space-between}
+.bun-price{font-size:18px;font-weight:500;color:#fff}
+.bun-save{font-size:10px;color:#B89C82;margin-top:2px}
+.btn-w{background:#fff;color:#1C1C1A;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer}
+
+/* MRA */
+.mra{background:#fff;border:1.5px solid #E8E5DF;border-top:3px solid #A32D2D;border-radius:8px;padding:1rem;margin-bottom:.75rem}
+.mra .mt{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#A32D2D;margin-bottom:4px}
+.mra .mh{font-size:13px;font-weight:500;color:#1C1C1A;margin-bottom:5px}
+.mra .md{font-size:11px;color:#827F7C;line-height:1.6;margin-bottom:.625rem}
+.mra .mn{font-size:11px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:.5rem .75rem;margin-bottom:.75rem;line-height:1.5}
+.mra-ft{display:flex;align-items:center;justify-content:space-between}
+.mra-price{font-size:15px;font-weight:500;color:#1C1C1A}
+.mra-price span{font-size:10px;font-weight:400;color:#B89C82}
+.btn-d{background:#1C1C1A;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer}
+
+/* Next steps */
+.nxt{background:#fff;border:1px solid #E8E5DF;border-radius:8px;padding:.875rem 1rem;margin-bottom:.75rem}
+.nxt h3{font-size:11px;font-weight:500;color:#1C1C1A;margin-bottom:.5rem}
+.nxt-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ns{text-align:center}
+.ns-n{width:24px;height:24px;border-radius:50%;background:#FAF8F5;border:1px solid #E8E5DF;color:#1C1C1A;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
+.ns p{font-size:10px;color:#827F7C;line-height:1.4}
+.cta{display:block;width:100%;text-align:center;padding:11px;background:#1C1C1A;color:#fff;border-radius:8px;font-size:13px;font-weight:500;margin-bottom:.5rem;cursor:pointer;border:none;text-decoration:none}
+.disc{font-size:10px;color:#B89C82;text-align:center;line-height:1.5;padding-bottom:1rem}
+
+@media(max-width:480px){
+  .pos-grid{grid-template-columns:repeat(2,1fr)}
+  .diag-grid{grid-template-columns:1fr}
+  .res-metrics{grid-template-columns:repeat(2,1fr)}
+  .comp-grid{grid-template-columns:1fr}
+  .cum-steps{grid-template-columns:repeat(2,1fr)}
+  .nxt-steps{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">Revenue Execution</div>
+  <h1>Build your own picture.</h1>
+  <p>Enter your numbers. Understand your position. Pick the session that fits. See what changes.</p>
+</div>
+
+<div class="wrap">
+
+  <!-- STEP 1 -->
+  <div class="step-hdr">
+    <div class="step-num">Step 1</div>
+    <div class="step-title">Tell me about your year</div>
+    <div class="step-sub">Where are you right now — and where do you need to be?</div>
+  </div>
+
+  <div class="panel">
+    <div class="sg">
+      <div class="sr">
+        <div class="st"><div class="sn">Annual revenue target <div class="tip" data-tip="Your total quota for the year — the number your manager holds you to">?</div></div><div class="sv" id="lTgt">€500,000</div></div>
+        <input type="range" id="tgt" min="100000" max="3000000" step="50000" value="500000" oninput="calc()">
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">Revenue closed to date <div class="tip" data-tip="Signed and closed business so far this year — not pipeline, not verbal commitments">?</div></div><div class="sv" id="lCl">€175,000</div></div>
+        <input type="range" id="cl" min="0" max="3000000" step="25000" value="175000" oninput="calc()">
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">Current pipeline value <div class="tip" data-tip="Total value of all active opportunities you are working right now — qualified or otherwise">?</div></div><div class="sv" id="lPipe">€300,000</div></div>
+        <input type="range" id="pipe" min="0" max="3000000" step="25000" value="300000" oninput="calc()">
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">Pipeline coverage ratio <div class="tip" data-tip="How much pipeline you need per €1 of closed revenue. 4x means you need €400K pipeline to close €100K. Most sellers need 3x–4x. If your qualification is weak, you may need more.">?</div></div><div class="sv" id="lCov">4x</div></div>
+        <input type="range" id="cov" min="2" max="5" step="0.5" value="4" oninput="calc()">
+        <div class="zr"><span>2x tight</span><span>3x–4x typical</span><span>5x early stage</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-hdr">
+    <div class="step-num">Step 2</div>
+    <div class="step-title">Tell me about your deals</div>
+    <div class="step-sub">What does a deal mean to you personally?</div>
+  </div>
+
+  <div class="panel">
+    <div class="sg">
+      <div class="sr">
+        <div class="st"><div class="sn">Average deal value <div class="tip" data-tip="Your most common deal size — not your biggest, not your smallest. The one you close most often.">?</div></div><div class="sv" id="lDeal">€25,000</div></div>
+        <input type="range" id="deal" min="5000" max="500000" step="5000" value="25000" oninput="calc()">
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">Base salary <div class="tip" data-tip="Your fixed annual salary — guaranteed regardless of performance">?</div></div><div class="sv" id="lBase">€60,000</div></div>
+        <input type="range" id="base" min="20000" max="200000" step="5000" value="60000" oninput="calc()">
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">On-target earnings (OTE) <div class="tip" data-tip="Your total earnings if you hit 100% of target — base plus full commission">?</div></div><div class="sv" id="lOTE">€100,000</div></div>
+        <input type="range" id="ote" min="30000" max="500000" step="5000" value="100000" oninput="calc()">
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">Months remaining <div class="tip" data-tip="How many months left in your current sales year">?</div></div><div class="sv" id="lMths">6 months</div></div>
+        <input type="range" id="mths" min="1" max="12" step="1" value="6" oninput="calc()">
+      </div>
+    </div>
+  </div>
+
+  <!-- POSITION -->
+  <div class="step-hdr">
+    <div class="step-num">Your position</div>
+    <div class="step-title">Here's where you stand</div>
+  </div>
+
+  <div class="panel">
+    <div class="pos-grid">
+      <div class="pm"><div class="pl">Target</div><div class="pv" id="mTgt">€500,000</div></div>
+      <div class="pm red"><div class="pl">Gap to target</div><div class="pv" id="mGap">€0</div></div>
+      <div class="pm"><div class="pl">Achieved so far</div><div class="pv" id="mAch">0%</div><div class="ps">of annual target</div></div>
+      <div class="pm"><div class="pl">Current pipeline</div><div class="pv" id="mPipe">€0</div></div>
+      <div class="pm amber"><div class="pl">Pipeline required</div><div class="pv" id="mPipeReq">€0</div><div class="ps">at <span id="mCovX">4</span>x coverage</div></div>
+      <div class="pm red"><div class="pl">Pipeline gap</div><div class="pv" id="mPipeGap">€0</div><div class="ps">still needed</div></div>
+    </div>
+    <div class="pipe-visual">
+      <div class="pipe-bar-wrap">
+        <div class="pipe-bar-closed" id="pbClosed" style="width:0%"></div>
+        <div class="pipe-bar-pipe" id="pbPipe" style="width:0%;left:0%"></div>
+      </div>
+      <div class="pipe-bar-labels">
+        <span style="color:#1A7A48">■ Closed</span>
+        <span style="color:#185FA5">■ Pipeline</span>
+        <span id="pbTarget">€500,000 target</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-hdr">
+    <div class="step-num">Step 3</div>
+    <div class="step-title">Where's your biggest opportunity?</div>
+    <div class="step-sub">Pick the challenge that fits your situation most. You'll see the impact immediately.</div>
+  </div>
+
+  <div class="diag-grid">
+    <div class="diag-card on" onclick="sel('bda')">
+      <div class="dc-tag">✓</div>
+      <div class="dc-q">Is your pipeline too thin — not enough meetings, not enough opportunities?</div>
+      <div class="dc-s">Business Development Accelerator</div>
+      <div class="dc-o">More meetings. More pipeline. More revenue.</div>
+      <div class="dc-p">€391 inc VAT</div>
+    </div>
+    <div class="diag-card" onclick="sel('oda')">
+      <div class="dc-tag">✓</div>
+      <div class="dc-q">Is your pipeline full of deals that look good but don't close — or close smaller than they should?</div>
+      <div class="dc-s">Opportunity Development Accelerator</div>
+      <div class="dc-o">Better qualification. Higher deal value. Better close rate.</div>
+      <div class="dc-p">€391 inc VAT</div>
+    </div>
+    <div class="diag-card" onclick="sel('dpa')">
+      <div class="dc-tag">✓</div>
+      <div class="dc-q">Are your deals stalling, slipping, or dying late — after you've done all the work?</div>
+      <div class="dc-s">Deal Progression Accelerator</div>
+      <div class="dc-o">Aligned buying and selling. Fewer late losses. More deals closed.</div>
+      <div class="dc-p">€391 inc VAT</div>
+    </div>
+  </div>
+
+  <!-- SESSION SPECIFIC INPUTS -->
+  <div class="sess-in" id="bdaIn">
+    <div class="sess-in-lbl">BDA — refine your numbers</div>
+    <div class="sg">
+      <div class="sr">
+        <div class="st"><div class="sn">Additional meetings/month <div class="tip" data-tip="Conservative 3–5: Realistic improvement for most sellers. Strong 5–7: Good outreach and messaging in place. Aggressive 7–10: High-volume outreach with strong ICP clarity and LinkedIn activity.">?</div></div><div class="sv" id="lMts">5</div></div>
+        <input type="range" id="mts" min="0" max="10" step="1" value="0" oninput="calc()">
+        <div class="zl zs" id="mtsZ">Strong</div>
+        <div class="zr"><span>0 (no change)</span><span>Strong (5–7)</span><span>Aggressive (7–10)</span></div>
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">LinkedIn activity <div class="tip" data-tip="Profile Optimisation: Updated positioning and keywords — passive inbound begins (+1 meeting/month). Active Posting: Regular content builds authority and audience (+2 meetings/month). Full Nurturing: Posting + engagement + warm DM outreach to followers (+4 meetings/month).">?</div></div><div class="sv" id="lLI">Active Posting</div></div>
+        <input type="range" id="li" min="0" max="3" step="1" value="0" oninput="calc()">
+        <div class="zl zs" id="liZ">Active Posting (+2/month)</div>
+        <div class="zr"><span>None</span><span>Active Posting</span><span>Full Nurturing</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sess-in" id="odaIn" style="display:none">
+    <div class="sess-in-lbl">ODA — refine your numbers</div>
+    <div class="sg">
+      <div class="sr">
+        <div class="st"><div class="sn">Qualification improvement <div class="tip" data-tip="How much better will your qualification be after ODA? Low: you remove the obvious bad deals. Medium: rigorous qualification — only real opportunities stay. High: every deal in your pipeline is properly qualified, your coverage ratio drops significantly.">?</div></div><div class="sv" id="lQual">None</div></div>
+        <input type="range" id="qual" min="0" max="3" step="1" value="0" oninput="calc()">
+        <div class="zr"><span>None</span><span>Medium</span><span>High</span></div>
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">Deal value uplift from value selling <div class="tip" data-tip="Low (10%): Some improvement in how you articulate value — small price uplift and less discounting. Medium (20%): Clear pain anchoring reduces price resistance meaningfully. High (30%): Strong value case built around cost of inaction — price objection largely eliminated.">?</div></div><div class="sv" id="lUpl">Medium (20%)</div></div>
+        <input type="range" id="upl" min="0" max="3" step="1" value="0" oninput="calc()">
+        <div class="zl zs" id="uplZ">Medium</div>
+        <div class="zr"><span>Low (10%)</span><span>Medium (20%)</span><span>High (30%)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sess-in" id="dpaIn" style="display:none">
+    <div class="sess-in-lbl">DPA — refine your numbers</div>
+    <div class="sg">
+      <div class="sr">
+        <div class="st"><div class="sn">Late stage loss rate <div class="tip" data-tip="Of the qualified opportunities that make it to late stage — proposal, negotiation, final decision — what % don't close? This is your most expensive failure point.">?</div></div><div class="sv" id="lLate">25%</div></div>
+        <input type="range" id="late" min="0" max="50" step="5" value="0" oninput="calc()">
+        <div class="zl zs" id="lateZ">Typical</div>
+        <div class="zr"><span>Low (5–15%)</span><span>Typical (15–30%)</span><span>High (30–50%)</span></div>
+      </div>
+      <div class="sr">
+        <div class="st"><div class="sn">% of pipeline at risk of stalling <div class="tip" data-tip="What % of your active pipeline do you think is at risk of going quiet, delaying indefinitely, or dying without direct intervention? Be honest — most sellers underestimate this.">?</div></div><div class="sv" id="lStall">30%</div></div>
+        <input type="range" id="stall" min="0" max="70" step="5" value="0" oninput="calc()">
+        <div class="zl zs" id="stallZ">Typical</div>
+        <div class="zr"><span>Low (10–20%)</span><span>Typical (20–40%)</span><span>High (40–70%)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 — RESULT -->
+  <div class="step-hdr">
+    <div class="step-num">Step 4</div>
+    <div class="step-title">Here's what changes</div>
+  </div>
+
+  <div class="result">
+    <div class="res-top">
+      <div>
+        <div class="res-ey">Your selected session</div>
+        <div class="res-name" id="resName">Business Development Accelerator</div>
+      </div>
+      <div class="res-price">€391 inc VAT</div>
+    </div>
+    <div class="res-story" id="resStory"></div>
+    <div class="res-metrics">
+      <div class="rm">
+        <div class="rl">Pipeline</div>
+        <div class="rm-row"><div class="rm-before" id="rmPipeBefore">€0</div><div class="rm-after" id="rmPipeAfter">€0</div></div>
+        <div class="rm-delta" id="rmPipeDelta">+€0 added</div>
+        <div class="rs">current → after session</div>
+      </div>
+      <div class="rm">
+        <div class="rl">Revenue closed</div>
+        <div class="rm-row"><div class="rm-before" id="rmRevBefore">€0</div><div class="rm-after" id="rmRevAfter">€0</div></div>
+        <div class="rm-delta" id="rmRevDelta">+€0 additional</div>
+        <div class="rs">current → after session</div>
+      </div>
+      <div class="rm">
+        <div class="rl">Target achievement</div>
+        <div class="rm-row"><div class="rm-before" id="rmAchBefore">0%</div><div class="rm-after" id="rmAchAfter">0%</div></div>
+        <div class="rm-delta" id="rmAchDelta">+0%</div>
+        <div class="rs">current → after session</div>
+      </div>
+      <div class="rm">
+        <div class="rl">Pipeline required</div>
+        <div class="rm-row"><div class="rm-before" id="rmPipeReqBefore">€0</div><div class="rm-after" id="rmPipeReqAfter">€0</div></div>
+        <div class="rm-delta" id="rmPipeReqDelta">€0 less needed</div>
+        <div class="rs">current → after session</div>
+      </div>
+      <div class="rm">
+        <div class="rl">Commission</div>
+        <div class="rm-row"><div class="rm-before" id="rmCommBefore">€0</div><div class="rm-after" id="rmCommAfter">€0</div></div>
+        <div class="rm-delta" id="rmCommDelta">+€0 additional</div>
+        <div class="rs">current → after session</div>
+      </div>
+      <div class="rm">
+        <div class="rl">ROI on €391</div>
+        <div class="rm-row"><div class="rm-after" id="rmROI" style="font-size:22px">0x</div></div>
+        <div class="rm-delta" id="rmROINote">return on investment</div>
+        <div class="rs">commission gain ÷ session cost</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOGGLE -->
+  <div class="tog-row" onclick="togComp()">
+    <div class="tog" id="togEl"><div class="tok"></div></div>
+    <div class="tog-lbl"><strong>Show me what the other sessions would add</strong> — based on your numbers above</div>
+  </div>
+
+  <!-- COMPARISON -->
+  <div id="compSec" style="display:none">
+    <div class="comp-lbl">All three accelerators — side by side</div>
+    <div class="comp-grid">
+      <div class="cc bda-c act" id="ccBDA">
+        <div class="ct">BDA</div>
+        <div class="cr" id="ccRBDA">€0</div>
+        <div class="co" id="ccOBDA">€0 commission</div>
+        <div class="cp" id="ccPBDA">+0% target</div>
+        <div class="cn">More meetings → more pipeline → more revenue</div>
+        <div class="ca" id="ccABDA">✓ Selected</div>
+      </div>
+      <div class="cc oda-c grey" id="ccODA">
+        <div class="ct">ODA</div>
+        <div class="cr" id="ccRODA">€0</div>
+        <div class="co" id="ccOODA">€0 commission</div>
+        <div class="cp" id="ccPODA">+0% target</div>
+        <div class="cn">Better qual → higher deal value → less pipeline needed</div>
+        <div class="ca" id="ccAODA" onclick="sel('oda')">Select this session →</div>
+      </div>
+      <div class="cc dpa-c grey" id="ccDPA">
+        <div class="ct">DPA</div>
+        <div class="cr" id="ccRDPA">€0</div>
+        <div class="co" id="ccODPA">€0 commission</div>
+        <div class="cp" id="ccPDPA">+0% target</div>
+        <div class="cn">Fewer late losses + stall recovery → more deals closed</div>
+        <div class="ca" id="ccADPA" onclick="sel('dpa')">Select this session →</div>
+      </div>
+    </div>
+
+    <div class="cum">
+      <div class="cum-title">If you bought all three — cumulative target achievement</div>
+      <div class="cum-track">
+        <div class="cum-seg" id="cs0" style="background:#C0392B;left:0;width:0%"></div>
+        <div class="cum-seg" id="cs1" style="background:#185FA5;left:0;width:0%"></div>
+        <div class="cum-seg" id="cs2" style="background:#0F6E56;left:0;width:0%"></div>
+        <div class="cum-seg" id="cs3" style="background:#854F0B;left:0;width:0%"></div>
+      </div>
+      <div class="cum-labels"><span>0%</span><span>50%</span><span>100%+</span></div>
+      <div class="cum-steps">
+        <div class="cst"><div class="cp" id="cp0" style="color:#C0392B">0%</div><div class="cl">Today</div></div>
+        <div class="cst"><div class="cp" id="cp1" style="color:#185FA5">0%</div><div class="cl">+ BDA</div></div>
+        <div class="cst"><div class="cp" id="cp2" style="color:#0F6E56">0%</div><div class="cl">+ ODA</div></div>
+        <div class="cst"><div class="cp" id="cp3" style="color:#854F0B">0%</div><div class="cl">+ DPA</div></div>
+      </div>
+    </div>
+
+    <div class="bundle" id="bundleEl">
+      <h3>Complete Seller OS — all three accelerators</h3>
+      <p>All three sessions. All three Notion modules. One complete operating system for your entire sales career.</p>
+      <div class="bun-row">
+        <div><div class="bun-price">€1,599 <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,.4)">inc VAT</span></div><div class="bun-save">Save €365 vs buying individually</div></div>
+        <button class="btn-w">Get the full Seller OS →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MRA -->
+  <div class="mra">
+    <div class="mt">Management Review Accelerator</div>
+    <div class="mh">This session isn't about improving your numbers. It's about keeping your job.</div>
+    <div class="md">If the pressure is building and your next review is on your mind — this session gives you a credible recovery plan, a narrative you can deliver with confidence, and the best possible chance to recover on your terms.</div>
+    <div class="mn">If you're already in a formal performance improvement process, this session isn't the right fit. But if you can see it coming and want to get ahead of it — this is exactly what it's designed for.</div>
+    <div class="mra-ft"><div class="mra-price">€391 <span>inc VAT</span></div><button class="btn-d">Book now</button></div>
+  </div>
+
+  <!-- NEXT STEPS -->
+  <div class="nxt">
+    <h3>What happens after you book</h3>
+    <div class="nxt-steps">
+      <div class="ns"><div class="ns-n">1</div><p>Book and pay via Stripe — 60 seconds</p></div>
+      <div class="ns"><div class="ns-n">2</div><p>Complete a short intake form so Richard can prepare</p></div>
+      <div class="ns"><div class="ns-n">3</div><p>90 mins with Richard on Google Meet — Notion module built live</p></div>
+    </div>
+  </div>
+
+  <a class="cta" href="https://sellers.revenueexecution.co">See all four accelerators →</a>
+  <p class="disc">Illustrative estimates based on your inputs. Assumptions are conservative. Individual results will vary.</p>
+
+</div>
+
+<script>
+let curSess='bda', showComp=false;
+const fmt=v=>'€'+Math.round(v).toLocaleString('en-IE');
+const pct=v=>Math.round(Math.min(v,999))+'%';
+const n=id=>parseFloat(document.getElementById(id).value)||0;
+
+function sel(s){
+  curSess=s;
+  ['bda','oda','dpa'].forEach((x,i)=>{
+    document.querySelectorAll('.diag-card')[i].classList.toggle('on',x===s);
+  });
+  document.getElementById('bdaIn').style.display=s==='bda'?'block':'none';
+  document.getElementById('odaIn').style.display=s==='oda'?'block':'none';
+  document.getElementById('dpaIn').style.display=s==='dpa'?'block':'none';
+  calc();
+}
+
+function togComp(){
+  showComp=!showComp;
+  document.getElementById('togEl').classList.toggle('on',showComp);
+  document.getElementById('compSec').style.display=showComp?'block':'none';
+  if(showComp)document.getElementById('bundleEl').style.display='block';
+  calc();
+}
+
+function calc(){
+  const tgt=Math.max(n('tgt'),1);
+  const cl=Math.min(n('cl'),tgt);
+  const pipe=n('pipe');
+  const cov=n('cov')||4;
+  const deal=Math.max(n('deal'),1);
+  const base=n('base');
+  const ote=n('ote');
+  const mths=Math.max(n('mths'),1);
+  const mts=parseFloat(document.getElementById('mts').value);
+  const li=parseFloat(document.getElementById('li').value);
+  const qual=parseFloat(document.getElementById('qual').value);
+  const upl=parseFloat(document.getElementById('upl').value);
+  const late=parseFloat(document.getElementById('late').value)/100;
+  const stall=parseFloat(document.getElementById('stall').value)/100;
+
+  // Derived
+  const commRate=Math.max(ote-base,0)/tgt;
+  const gap=Math.max(tgt-cl,0);
+  const achPct=(cl/tgt)*100;
+  const pipeReq=gap*cov;
+  const pipeGap=Math.max(pipeReq-pipe,0);
+  const dealWorth=deal*commRate;
+
+  // Labels
+  document.getElementById('lTgt').textContent=fmt(tgt);
+  document.getElementById('lCl').textContent=fmt(cl);
+  document.getElementById('lPipe').textContent=fmt(pipe);
+  document.getElementById('lCov').textContent=cov+'x';
+  document.getElementById('lDeal').textContent=fmt(deal);
+  document.getElementById('lBase').textContent=fmt(base);
+  document.getElementById('lOTE').textContent=fmt(ote);
+  document.getElementById('lMths').textContent=Math.round(mths)+(mths==1?' month':' months');
+
+  // BDA labels
+  document.getElementById('lMts').textContent=Math.round(mts);
+  const mtsZ=mts===0?'No change':mts<=5?'Conservative':mts<=7?'Strong':'Aggressive';
+  const mtsZEl=document.getElementById('mtsZ');
+  mtsZEl.textContent=mtsZ;mtsZEl.className='zl '+(mts===0?'':mts<=5?'zc':mts<=7?'zs':'za');
+  const liMts=li===0?0:li===1?1:li===2?2:4;
+  const liLbl=li===0?'No LinkedIn activity':li===1?'Profile Optimisation (+1/month)':li===2?'Active Posting (+2/month)':'Full Nurturing (+4/month)';
+  const liCol=li===0?'#B89C82':li===1?'#1A7A48':li===2?'#D4860A':'#C0392B';
+  document.getElementById('lLI').textContent=li===0?'None':li===1?'Profile Optimisation':li===2?'Active Posting':'Full Nurturing';
+  const liZEl=document.getElementById('liZ');
+  liZEl.textContent=liLbl;liZEl.style.color=liCol;
+
+  // ODA labels
+  document.getElementById('lQual').textContent=qual===0?'None':qual===1?'Low':qual===2?'Medium':'High';
+  const uplPct=upl===0?0:upl===1?0.10:upl===2?0.20:0.30;
+  const uplLbl=upl===0?'None':upl===1?'Low (10%)':upl===2?'Medium (20%)':'High (30%)';
+  document.getElementById('lUpl').textContent=uplLbl;
+  const uplZEl=document.getElementById('uplZ');
+  uplZEl.textContent=upl===0?'None':upl===1?'Low':upl===2?'Medium':'High';
+  uplZEl.className='zl '+(upl===0?'':upl===1?'zc':upl===2?'zs':'za');
+
+  // DPA labels
+  document.getElementById('lLate').textContent=late===0?'None':Math.round(late*100)+'%';
+  const lateZ=late===0?'No recovery':late<=0.15?'Low':late<=0.30?'Typical':'High';
+  const lateZEl=document.getElementById('lateZ');
+  lateZEl.textContent=lateZ;lateZEl.className='zl '+(late===0?'':late<=0.15?'zc':late<=0.30?'zs':'za');
+  document.getElementById('lStall').textContent=stall===0?'None':Math.round(stall*100)+'%';
+  const stallZ=stall===0?'No recovery':stall<=0.20?'Low':stall<=0.40?'Typical':'High';
+  const stallZEl=document.getElementById('stallZ');
+  stallZEl.textContent=stallZ;stallZEl.className='zl '+(stall===0?'':stall<=0.20?'zc':stall<=0.40?'zs':'za');
+
+  // Position metrics
+  document.getElementById('mTgt').textContent=fmt(tgt);
+  document.getElementById('mGap').textContent=fmt(gap);
+  document.getElementById('mAch').textContent=pct(achPct);
+  document.getElementById('mPipe').textContent=fmt(pipe);
+  document.getElementById('mPipeReq').textContent=fmt(pipeReq);
+  document.getElementById('mCovX').textContent=cov;
+  document.getElementById('mPipeGap').textContent=fmt(pipeGap);
+  document.getElementById('pbTarget').textContent=fmt(tgt)+' target';
+
+  // Pipeline bar
+  const totalRange=Math.max(tgt,cl+pipe)*1.1;
+  const closedW=Math.min((cl/totalRange)*100,100);
+  const pipeW=Math.min((pipe/totalRange)*100,100);
+  document.getElementById('pbClosed').style.width=closedW+'%';
+  document.getElementById('pbPipe').style.width=pipeW+'%';
+  document.getElementById('pbPipe').style.left=closedW+'%';
+
+
+
+  // ---- CALCULATIONS ----
+
+  // BDA
+  const bdaTotalMts=mts+liMts;
+  const bdaNewPipe=bdaTotalMts*mths*deal;
+  const bdaRev=bdaNewPipe/cov;
+  const bdaComm=bdaRev*commRate;
+  const bdaAch=((cl+bdaRev)/tgt)*100;
+  const bdaPipeReqAfter=Math.max(gap-bdaRev,0)*cov;
+
+  // ODA — three levers, all start at 0 impact
+  // qual is now 0-3 improvement level: 0=none, 1=low(20% waste removed), 2=medium(40%), 3=high(60%)
+  const qualImprovePct=qual===0?0:qual===1?0.20:qual===2?0.40:0.60;
+  const covReduction=qual===0?0:qual===1?0.10:qual===2?0.20:0.30; // coverage ratio drops as qual improves
+  const newCovNeeded=Math.max(cov*(1-covReduction),1.5);
+  const pipeQualGain=pipe*qualImprovePct; // additional effective pipeline from removing bad deals
+  const odaRevFromQual=pipeQualGain/newCovNeeded;
+  const odaRevFromValue=(pipe/cov)*uplPct; // uplPct starts at 0
+  const odaRev=Math.max(odaRevFromQual+odaRevFromValue,0);
+  const odaComm=odaRev*commRate;
+  const odaAch=((cl+odaRev)/tgt)*100;
+  const odaPipeReqAfter=Math.max(gap-odaRev,0)*newCovNeeded;
+  const qualLbl=qual===0?'no change':qual===1?'low improvement':qual===2?'medium improvement':'high improvement';
+  const odaStory=qual===0&&upl===0?`Move the sliders above to see how ODA impacts your numbers. Qualification improvement removes bad deals from your pipeline — making more of what you have real. Deal value uplift shows what better value articulation is worth.`:`Your pipeline is ${fmt(pipe)}. With ${qualLbl} in qualification, ${fmt(pipeQualGain)} more of your pipeline becomes real — and your required coverage ratio drops from ${cov}x to ${newCovNeeded.toFixed(1)}x. ${uplPct>0?'A '+Math.round(uplPct*100)+'% increase in average deal value from better value selling adds '+fmt(odaRevFromValue)+' of additional revenue.':''} Total additional revenue: ${fmt(odaRev)}.`;
+
+  // DPA
+  const lateStageEstimate=pipe*0.4; // assume 40% of pipeline is at late stage
+  const lateLossValue=lateStageEstimate*late;
+  const dpaLateRec=lateLossValue*0.50;
+  const dpaStallRec=pipe*stall*0.40;
+  const dpaRev=dpaLateRec+dpaStallRec;
+  const dpaComm=dpaRev*commRate;
+  const dpaAch=((cl+dpaRev)/tgt)*100;
+  const dpaPipeReqAfter=Math.max(gap-dpaRev,0)*cov;
+  const lateCost=lateLossValue*commRate;
+  const dpaStory=late===0&&stall===0?`Move the sliders above to see how DPA impacts your numbers. Late stage loss rate shows what you're losing at the final hurdle. Pipeline at risk of stalling shows what could die without intervention.`:`${late>0?'At a '+Math.round(late*100)+'% late stage loss rate, approximately '+fmt(lateLossValue)+' of your pipeline is failing at the final hurdle — costing you '+fmt(lateCost)+' in commission. DPA recovers 50% of that.':''} ${stall>0?Math.round(stall*100)+'% of your active pipeline is at risk of stalling — DPA intervenes on 40% of those deals, recovering '+fmt(dpaStallRec)+' of additional revenue.':''}`;
+
+  const results={
+    bda:{name:'Business Development Accelerator',pipe:bdaNewPipe,rev:bdaRev,comm:bdaComm,ach:bdaAch,pipeReqAfter:bdaPipeReqAfter,story:bdaTotalMts===0?`Move the sliders above to see how BDA impacts your numbers. Additional meetings build pipeline. LinkedIn activity generates inbound. Together they create new revenue from your current position.`:`You're generating ${mts} additional outbound meetings per month${liMts>0?', plus '+liMts+' inbound from LinkedIn':''} — ${bdaTotalMts} total extra meetings. Over ${Math.round(mths)} months at your average deal value of ${fmt(deal)}, that creates ${fmt(bdaNewPipe)} of new pipeline. At your ${cov}x coverage ratio, that converts to ${fmt(bdaRev)} of additional revenue — and ${fmt(bdaComm)} in your pocket. Your pipeline requirement drops from ${fmt(pipeReq)} to ${fmt(bdaPipeReqAfter)}.`},
+    oda:{name:'Opportunity Development Accelerator',pipe:pipeQualGain,rev:odaRev,comm:odaComm,ach:odaAch,pipeReqAfter:odaPipeReqAfter,story:odaStory},
+    dpa:{name:'Deal Progression Accelerator',pipe:pipe,rev:dpaRev,comm:dpaComm,ach:dpaAch,pipeReqAfter:dpaPipeReqAfter,story:dpaStory}
+  };
+
+  const r=results[curSess];
+  document.getElementById('resName').textContent=r.name;
+  document.getElementById('resStory').textContent=r.story;
+
+  // Pipeline before/after
+  document.getElementById('rmPipeBefore').textContent=fmt(pipe);
+  document.getElementById('rmPipeAfter').textContent=fmt(pipe+r.pipe);
+  document.getElementById('rmPipeDelta').textContent='+'+fmt(r.pipe)+' added';
+
+  // Revenue before/after
+  document.getElementById('rmRevBefore').textContent=fmt(cl);
+  document.getElementById('rmRevAfter').textContent=fmt(cl+r.rev);
+  document.getElementById('rmRevDelta').textContent='+'+fmt(r.rev)+' additional';
+
+  // Target achievement before/after
+  document.getElementById('rmAchBefore').textContent=pct(achPct);
+  document.getElementById('rmAchAfter').textContent=pct(r.ach);
+  document.getElementById('rmAchDelta').textContent='+'+pct(Math.max(r.ach-achPct,0))+' uplift';
+
+  // Pipeline required before/after
+  document.getElementById('rmPipeReqBefore').textContent=fmt(pipeReq);
+  document.getElementById('rmPipeReqAfter').textContent=fmt(r.pipeReqAfter);
+  document.getElementById('rmPipeReqDelta').textContent=fmt(Math.max(pipeReq-r.pipeReqAfter,0))+' less needed';
+
+  // Commission before/after
+  const commNow=cl*commRate;
+  document.getElementById('rmCommBefore').textContent=fmt(commNow);
+  document.getElementById('rmCommAfter').textContent=fmt(commNow+r.comm);
+  document.getElementById('rmCommDelta').textContent='+'+fmt(r.comm)+' additional';
+
+  // ROI
+  const roi=r.comm>0?Math.round(r.comm/391):0;
+  document.getElementById('rmROI').textContent=roi>0?roi+'x':'—';
+  document.getElementById('rmROINote').textContent=roi>0?'return on €391 investment':'move sliders to see ROI';
+
+  // Comparison cards
+  const sessKeys=['bda','oda','dpa'];
+  const ids=['BDA','ODA','DPA'];
+  sessKeys.forEach((s,i)=>{
+    const res=results[s];
+    const id=ids[i];
+    document.getElementById('ccR'+id).textContent=fmt(res.rev);
+    document.getElementById('ccO'+id).textContent=fmt(res.comm)+' commission';
+    document.getElementById('ccP'+id).textContent='+'+pct(Math.max(res.ach-achPct,0))+' target';
+    const card=document.getElementById('cc'+id);
+    const addBtn=document.getElementById('ccA'+id);
+    if(s===curSess){
+      card.classList.remove('grey');card.classList.add('act');
+      addBtn.textContent='✓ Selected';addBtn.style.color='#1A7A48';addBtn.style.cursor='default';
+    }else{
+      card.classList.add('grey');card.classList.remove('act');
+      addBtn.textContent='Select this session →';addBtn.style.color='#1C1C1A';addBtn.style.cursor='pointer';
+    }
+  });
+
+  // Cumulative bar
+  const c0=Math.min(achPct,100);
+  const c1=Math.min(bdaAch,100);
+  const c2=Math.min(((cl+bdaRev+odaRev)/tgt)*100,100);
+  const c3=Math.min(((cl+bdaRev+odaRev+dpaRev)/tgt)*100,100);
+  [c0,c1,c2,c3].forEach((v,i)=>{
+    document.getElementById('cs'+i).style.width=v+'%';
+    document.getElementById('cp'+i).textContent=pct(v);
+  });
+}
+
+sel('bda');
+</script>
+</body>
+</html>
