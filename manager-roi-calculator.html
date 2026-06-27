@@ -415,8 +415,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     <!-- Cost / ROI -->
     <div class="cost-row">
       <div class="cost-item"><div class="ic-lbl">Individual cost (3 × €391 per seller)</div><div class="ic-val" id="tIndivCost" style="color:#F6AD55">€0</div></div>
-      <div class="cost-item"><div class="ic-lbl">Team programme cost</div><div class="ic-val" id="tCost" style="color:#F6AD55">€0</div><div class="ic-sub" id="tCostBreak"></div></div>
-      <div class="cost-item"><div class="ic-lbl">ROI on programme</div><div class="ic-val" id="tROI" style="color:#6FCF97">—</div><div class="ic-sub">commission ÷ programme cost</div></div>
+      <div class="cost-item"><div class="ic-lbl">Team programme cost</div><div class="ic-val" id="tCost" style="color:#8F6E50">€0</div><div class="ic-sub" id="tCostBreak"></div></div>
+      <div class="cost-item"><div class="ic-lbl">ROI on programme</div><div class="ic-val" id="tROI" style="color:#8F6E50">—</div><div class="ic-sub">commission ÷ programme cost</div></div>
     </div>
 
     <div class="roi-line" id="roiLine">Move the sliders above to build your picture.</div>
@@ -615,7 +615,7 @@ function calc(){
   set('tProjAfter',fmt(Math.min(projAfter,tgt*1.5)));
   set('tProjAfterPct',pct(Math.min(projAfterPct,150))+' of target');
   const projAfterEl=document.getElementById('tProjAfter');
-  if(projAfterEl)projAfterEl.style.color=projAfterPct>=100?'#6FCF97':projAfterPct>=75?'#F6AD55':'#E74C3C';
+  if(projAfterEl)projAfterEl.style.color=projAfterPct>=100?'#1A7A48':projAfterPct>=75?'#D4860A':'#C0392B';
 
   // Commission row
   set('tCommExist',fmt(commEarned));
