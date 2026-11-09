@@ -12,7 +12,7 @@ let db;try{db=JSON.parse(localStorage.getItem(key))||{sessions:{}}}catch(e){db={
 const days=Object.keys(plans);days.forEach((d,i)=>{let o=document.createElement("option");o.value=d;o.textContent=d;$("day").append(o)});$("day").value=days[(new Date().getDay()+6)%7]||days[0];if(!plans[$("day").value])$("day").value=days[0];$("date").value=today();
 function id(){return $("date").value+"|"+$("day").value}
 function fresh(){return {bodyweight:"",cardio:"",minutes:"",exercises:plans[$("day").value].map(x=>({name:x[0],sets:Array.from({length:x[1]},()=>({weight:"",reps:"",rir:""}))}))}}
-function get(){return db.sessions[id()]||fresh()}
+function get(){if(!db.sessions[id()]){db.sessions[id()]=fresh();persist()}return db.sessions[id()]}
 function persist(){try{localStorage.setItem(key,JSON.stringify(db));$("saved").textContent="Saved on this device ✓";$("saved").className="status"}catch(e){$("saved").textContent="Storage unavailable — export your workout backup";$("saved").className="hint"}}
 function commit(){let s=get();s.bodyweight=$("bodyweight").value;s.cardio=$("cardio").value;s.minutes=$("minutes").value;db.sessions[id()]=s;persist()}
 function prev(name){let list=Object.entries(db.sessions).filter(([k])=>k!==id()&&k.split("|")[0]<=$("date").value).sort((a,b)=>b[0].localeCompare(a[0]));for(let [k,s] of list){let ex=(s.exercises||[]).find(x=>x.name===name);if(ex&&ex.sets.some(z=>z.reps!==""))return k.split("|")[0]+": "+ex.sets.map(z=>(z.weight||"—")+"kg × "+(z.reps||"—")+(z.rir!==""?" (RIR "+z.rir+")":"")).join(" · ")}return "No previous result"}
